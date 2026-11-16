@@ -1,0 +1,13 @@
+# Large dataset
+PBJ_Daily_Nurse_Staffing_Q2_2024.csv
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+
+# Mac files
+.DS_Store
