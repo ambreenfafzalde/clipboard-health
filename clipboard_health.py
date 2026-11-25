@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
-from io import StringIO
+import matplotlib.pyplot as plt
+from pathlib import Path
 
 
 # Your existing code that loads and prepares provider_data goes here.
@@ -26,6 +27,8 @@ st.subheader("Daily Staffing Records")
 st.dataframe(df.head(100))
 
 provider_data = df[['PROVNUM', 'PROVNAME', 'CITY', 'STATE', 'COUNTY_NAME', 'COUNTY_FIPS', 'WorkDate', 'CY_Qtr', 'MDScensus']]
+
+
 
 st.title("Provider Data")
 st.subheader("Hospitals and Patient Analytics")
@@ -133,6 +136,9 @@ st.write('There are some facilites that are showing 0 patient-to-nurse coverage 
 nurse_to_patient_ratio = provider_data.loc[:,['nurse_to_patient_ratio', 'PROVNAME']]
 st.dataframe(nurse_to_patient_ratio,width="content" )
 
+
+
+
 # 2. Total Nurse Hours
 # Total nurse hours worked per hospital per month.
 # Group by:
@@ -142,20 +148,39 @@ st.dataframe(nurse_to_patient_ratio,width="content" )
 
 provider_data['month'] = provider_data['WorkDate'].dt.month
 
+
+
+
+
+
+# Group nurse hours by hospital and month
 result = (
     provider_data
-    .groupby(['PROVNAME', 'STATE', 'month'], as_index=False)['total_nurse_hours']
+    .groupby(['PROVNAME', 'month'], as_index=False)
+    ['total_nurse_hours']
     .sum()
-   
 )
 
-result = provider_data.loc[:,['PROVNAME','total_nurse_hours', 'month']]
 
 
+st.subheader("Total Nurse Hours per Hospital per Month")
+st.dataframe(result)
 
-st.subheader("Total nurse hours worked per hospital per month")
-st.dataframe(result,width="content")
+fig, ax = plt.subplots(figsize=(6, 3))
 
+ax.bar(
+    result['month'],
+    result['total_nurse_hours']
+)
+
+ax.set_xlabel("Month")
+ax.set_ylabel("Total Nurse Hours")
+ax.set_xticks([4, 5, 6])
+ax.set_xticklabels(['April', 'May', 'June'])
+
+fig.tight_layout()
+
+st.pyplot(fig, width=1000)
 
 # 3. Contract vs Permanent Staff Ratio
 # Formula:
@@ -172,6 +197,21 @@ ctr_perm_ratio = staffing_hours.loc[
 ]
 st.dataframe(ctr_perm_ratio, width="content")
 
+fig, ax = plt.subplots(figsize=(6, 3))
+
+ax.hist(
+     staffing_hours['ctr_emp_ratio'].dropna(),
+     bins=20,
+     edgecolor="black"
+)
+
+ax.set_xlabel("Contract Staff Ratio")
+ax.set_ylabel("Frequency")
+ax.set_title("Distribution of Contract Staff Ratios")
+
+fig.tight_layout()
+
+st.pyplot(fig, width=1000)
 
 
 # 4. Average Patient Census
@@ -189,6 +229,26 @@ result = (
 st.subheader("Average Patient Census")
 avg_patient_census = result.loc[:, ['PROVNAME', 'STATE', "avg_patient_census"]]
 st.dataframe(avg_patient_census, width="content")
+
+
+
+fig, ax = plt.subplots(figsize=(6, 3))
+
+result.head(10).pivot(
+    index='STATE',
+    columns='PROVNAME',
+    values='avg_patient_census'
+).plot(kind='bar', ax=ax)
+
+ax.set_xlabel("STATE")
+ax.set_ylabel("Average Patient Census")
+ax.tick_params(axis='x', labelrotation=90)
+
+ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=6)
+
+fig.tight_layout()
+
+st.pyplot(fig, width=1000)
 
 
 # 5. Hospitals with Highest Staffing Hours
